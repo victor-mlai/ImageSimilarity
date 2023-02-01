@@ -9,10 +9,10 @@ def build_arg_parser():
                         metavar='DIR', help='path to checkpoint directory')
     parser.add_argument('--logs-dir', default='./logs/', type=Path,
                         metavar='DIR', help='path to logs directory')
-    parser.add_argument('--model-filename', default='SiameseNetTriplet.pch', type=str,
+    parser.add_argument('--model-filename', default='SiameseNetTriplet_v2.pch', type=str,
                         metavar='Name', help='The name of the file to save the model to')
 
-    parser.add_argument('--epochs', default=1, type=int, metavar='N',
+    parser.add_argument('--epochs', default=20, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('--batch-size', default=256, type=int, metavar='N',
                         help='mini-batch size')

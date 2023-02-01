@@ -15,12 +15,10 @@ print(torch.__version__)
 
 # Returns triplet images from Totally-Looks-Like-Data transformed by `transform` param
 class MyTLLDataset(Dataset):
+    # original images are (3, 245, 200), should be transformed to (3, 224, 224)
     def __init__(self, ttl_dataset_path, transform, no_faces = True):
         self.transform = transform
-
-        # (3, 245, 200)
         self.metadata = pd.read_pickle(os.path.join(ttl_dataset_path, "metadata.pkl"))
-        # the images in left/ dir have the same names as in right/ dir
         if no_faces:
             self.left_imgs_paths = []
             self.right_imgs_paths = []
@@ -33,7 +31,7 @@ class MyTLLDataset(Dataset):
                 for img_name in os.listdir(os.path.join(ttl_dataset_path, "left"))]
             self.right_imgs_paths = [os.path.join(ttl_dataset_path, "right", img_name)
                 for img_name in os.listdir(os.path.join(ttl_dataset_path, "right"))]
-      
+
     def __len__(self):
         return len(self.left_imgs_paths)
 
@@ -50,7 +48,7 @@ class MyTLLDataset(Dataset):
         rand_idx = numpy.random.randint(len(self))
         while rand_idx == idx:
             rand_idx = numpy.random.randint(len(self))
-        rand_img_path = self.left_imgs_paths[idx] if random.choice([True, False]) else self.right_imgs_paths[idx]
+        rand_img_path = self.left_imgs_paths[rand_idx] if random.choice([True, False]) else self.left_imgs_paths[rand_idx]
         rand_img = read_transform_img(rand_img_path)
 
         # return 2 similar and 1 dissimilar for triplet loss

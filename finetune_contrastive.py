@@ -69,7 +69,10 @@ def eval(model, valid_ds, device):
 
                 plt.show()
 
-    print(f"Found {correct}/{len(valid_ds)} in the top-{topk}")
+    topk_count = np.cumsum(np.array(distrib))
+    for k in [1, 5, 10, 15, 25, 50, 100]:
+        print(f"Found {topk_count[k-1]}/{len(valid_ds)} in the top-{k}")
+
     plt.bar(range(topk), distrib)
     plt.title(f'Rank frequency for Top-{topk} matches')
     plt.ylabel('Frequency')
@@ -86,13 +89,27 @@ if __name__ == "__main__":
 
     print("Loading dataset..")
     normalize_tf = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
+    color_jitter = transforms.ColorJitter(
+        0.4,
+        0.4,
+        0.4,
+        0.1,
+    )
+
+    color_transform = transforms.Compose([
+        transforms.RandomApply([color_jitter], p=0.8),
+        transforms.RandomGrayscale(p=0.2)])
+
     transform = transforms.Compose([
         transforms.ToPILImage(),
         transforms.Resize((224, 224)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        #color_transform,
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        normalize_tf
     ])
-    dataset = MyTLLDataset(args.dataset_dir, transform, no_faces=False)
+    dataset = MyTLLDataset(args.dataset_dir, transform, no_faces=True)
     train_set_size = int(len(dataset) * 0.8)
     valid_set_size = len(dataset) - train_set_size
     train_ds, test_ds = random_split(dataset, [train_set_size, valid_set_size])
@@ -102,8 +119,8 @@ if __name__ == "__main__":
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    #encoder = models.resnet50()
-    encoder = torch.hub.load('facebookresearch/barlowtwins:main', 'resnet50')
+    encoder = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)
+    #encoder = torch.hub.load('facebookresearch/barlowtwins:main', 'resnet50')
     num_ftrs = encoder.fc.in_features
     encoder.fc = torch.nn.Identity()
 

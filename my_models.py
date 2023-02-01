@@ -43,14 +43,14 @@ class SiameseNetAdaptive(nn.Module):
         output_pos = self.adaptive_func(output_pos)
 
         target = torch.ones_like(output_pos, device=device)
-        loss_pos = nn.functional.binary_cross_entropy(output_pos, target)
+        loss_pos = nn.functional.binary_cross_entropy_with_logits(output_pos, target)
 
         # negative pair
         output_neg = torch.cat((anchor, neg), 1)
         output_neg = self.adaptive_func(output_neg)
 
         target = torch.zeros_like(output_neg, device=device)
-        loss_neg = nn.functional.binary_cross_entropy(output_neg, target)
+        loss_neg = nn.functional.binary_cross_entropy_with_logits(output_neg, target)
 
         return anchor, pos, neg, loss_pos + loss_neg
 
@@ -79,8 +79,7 @@ class SiameseNetTriplet(nn.Module):
 
 
     def _forward(self, x):
-        with torch.no_grad():
-            out = self.encoder(x)
+        out = self.encoder(x)
 
         out = out.view(out.size()[0], -1)
 

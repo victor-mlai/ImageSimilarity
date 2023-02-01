@@ -43,7 +43,7 @@ def eval(model: SiameseNetAdaptive, valid_ds, device):
 
             pred_sim.append(sim.item())
 
-        pred_probs_idxs = np.array(pred_sim).argsort()[:topk]
+        pred_probs_idxs = np.array(pred_sim).argsort()[::-1][:topk]
         for i, idx in enumerate(pred_probs_idxs):
             if idx == left_idx:
                 correct += 1
@@ -129,13 +129,26 @@ if __name__ == "__main__":
         for anchor, pos, neg in tqdm.tqdm(train_loader):
             anchor, pos, neg = anchor.to(device), pos.to(device), neg.to(device)
 
+            anchor = model._forward(anchor)
+            pos = model._forward(pos)
+            neg = model._forward(neg)
+
             model.optimizer.zero_grad()
-            _, _, _, loss = model(anchor, pos, neg, device)
-            loss.backward()
+            output_pos = model.adaptive_func(torch.cat((anchor, pos), 1))
+            target = torch.ones_like(output_pos, device=device)
+            loss_pos = nn.functional.binary_cross_entropy_with_logits(output_pos, target)
+            loss_pos.backward()
+            model.optimizer.step()
+
+            model.optimizer.zero_grad()
+            output_neg = model.adaptive_func(torch.cat((anchor, neg), 1))
+            target = torch.zeros_like(output_neg, device=device)
+            loss_neg = nn.functional.binary_cross_entropy_with_logits(output_neg, target)
+            loss_neg.backward()
             model.optimizer.step()
 
             # statistics
-            running_loss += loss.item() * args.batch_size
+            running_loss += (loss_pos.item() + loss_neg.item()) * args.batch_size
         
         epoch_loss = running_loss / len(train_loader.dataset)
         print(f'Train Loss: {epoch_loss:.4f}')
@@ -150,9 +163,22 @@ if __name__ == "__main__":
         for anchor, pos, neg in tqdm.tqdm(test_loader):
             anchor, pos, neg = anchor.to(device), pos.to(device), neg.to(device)
 
+            anchor = model._forward(anchor)
+            pos = model._forward(pos)
+            neg = model._forward(neg)
+
             with torch.no_grad():
-                _, _, _, loss = model(anchor, pos, neg, device)
-            running_loss += loss.item() * args.batch_size
+                output_pos = model.adaptive_func(torch.cat((anchor, pos), 1))
+            target = torch.ones_like(output_pos, device=device)
+            loss_pos = nn.functional.binary_cross_entropy_with_logits(output_pos, target)
+
+            with torch.no_grad():
+                output_neg = model.adaptive_func(torch.cat((anchor, neg), 1))
+            target = torch.zeros_like(output_neg, device=device)
+            loss_neg = nn.functional.binary_cross_entropy_with_logits(output_neg, target)
+
+            # statistics
+            running_loss += (loss_pos.item() + loss_neg.item()) * args.batch_size
         
         epoch_loss = running_loss / len(test_loader.dataset)
         print(f'Valid Loss: {epoch_loss:.4f}')
