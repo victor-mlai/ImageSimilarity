@@ -1,0 +1,19 @@
+
+Hello, I will present my project regarding Image Similarity.
+As a short recap first: the task is to learn a way of measuring the similarity between images, the same way a human would do.
+For this task I used the Totally Looks like dataset, collected from a popular entertainment website with the same name, where users post pairs of images they found odly similar. However this dataset proved to be challanging, due to its very small size (only 1300 pairs of images were found to be compared based on generic features, and not facial features)
+To measure the similarity, I used the Siamese Network architecture. Where 2 images get passed to the same network, and it computes for each a feature vector that then we can use to compare using a distance function.
+
+
+For the Intermidiate step, I tried at first to see whether I can learn this distance function by adding adaptive layers on top of the network, however the results were very dissapointing: for the top-25 metric, it had only a 1% accuracy.
+
+I also tried to use Saliency maps to visualize the parts of the images based on which the network did the "matching", however I couldn't find any documentation online so this was the only result I could obtain.
+
+Now, to improve these results, I switched to Contrastive Learning. Also, since the dataset is very small, I also used transfer learning, where I first trained the model on ImageNet to learn meaningfull embeddings for my task by using the Barlow Twins (where we learn to obtain the same embedding even for an augmented image).
+The learned embedding needed to match the dataset, so for finetuning, I added some Projection Layers on top of the network and trained on TTL using the Triplet Loss.
+
+Since I couldn't find any papers that use the same dataset for the same task, and that use the same metric, I tried to compare the differences between pretraining with Barlow Twins as a loss, vs a model that was pretrained for classification.
+
+In this plot I show a frequency vector, which counts how many times the matching image was found at that rank. For example, the matching image was first in over 50 cases, compared to the classifier
+
+In conclusion, despite working on a small and very diverse dataset, we managed to obtain valuable results by combining both Transfer Learning and Contrastive Learning approaches and that our results show that pretraining Siamese networks using Barlow Twins Loss, is a promising approach for image similarity tasks.
